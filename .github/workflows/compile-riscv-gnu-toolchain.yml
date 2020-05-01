@@ -52,4 +52,4 @@ jobs:
       if: steps.compile.outputs.status == 'success' && !cancelled()
       with:
         name: riscv-gnu-toolchain-package
-        path: $PWD/riscv-gnu-toolchain-install
+        path: riscv-gnu-toolchain/riscv-gnu-toolchain-install
