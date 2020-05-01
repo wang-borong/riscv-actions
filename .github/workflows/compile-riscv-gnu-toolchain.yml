@@ -1,0 +1,67 @@
+#=================================================
+# https://github.com/P3TERX/Actions-OpenWrt
+# Description: Build OpenWrt using GitHub Actions
+# Lisence: MIT
+# Author: P3TERX
+# Blog: https://p3terx.com
+#=================================================
+
+name: Build riscv gnu toolchain
+
+on:
+  repository_dispatch:
+  release:
+    types: published
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/comile-riscv-gnu-toolchain.yml'
+#  schedule:
+#    - cron: 0 8 * * 5
+#  watch:
+#    types: started
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.event.repository.owner.id == github.event.sender.id
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+
+    - name: Initialization environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo swapoff /swapfile
+        sudo rm -rf /swapfile /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
+        sudo -E apt-get -qq update
+        sudo -E apt-get install autoconf automake autotools-dev curl python3 libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev
+        sudo -E apt-get -qq autoremove --purge
+        sudo -E apt-get -qq clean
+        sudo timedatectl set-timezone "$TZ"
+
+    - name: Clone toolchain source code
+      run: git clone --recursive https://github.com/riscv/riscv-gnu-toolchain
+
+    - name: Compile the riscv toolchain
+      id: compile
+      run: |
+        cd riscv-gnu-toolchain
+        # ./configure --prefix=./riscv-gnu-toolchain-install  --enable-multilib
+        ./configure --prefix=./riscv-gnu-toolchain-install --with-arch=rv64g
+        echo -e "$(nproc) thread compile"
+        make -j$(nproc) && make linux -j$(nproc)
+        echo "::set-output name=status::success"
+
+    - name: Upload compiled package
+      uses: actions/upload-artifact@master
+      if: steps.compile.outputs.status == 'success' && !cancelled()
+      with:
+        name: riscv-gnu-toolchain-package
+        path: riscv-gnu-toolchain/riscv-gnu-toolchain-install
