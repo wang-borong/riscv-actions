@@ -41,8 +41,8 @@ jobs:
       id: compile
       run: |
         cd riscv-gnu-toolchain
-        # ./configure --prefix=./riscv-gnu-toolchain-install  --enable-multilib
-        ./configure --prefix=$PWD/riscv-gnu-toolchain-install --with-arch=rv64g
+        ./configure --prefix=./riscv-gnu-toolchain-install  --enable-multilib
+        # ./configure --prefix=$PWD/riscv-gnu-toolchain-install --with-arch=rv64g
         echo -e "$(nproc) thread compile"
         make -j$(nproc) && make linux -j$(nproc)
         echo "::set-output name=status::success"
