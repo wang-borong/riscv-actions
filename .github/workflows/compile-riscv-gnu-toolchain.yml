@@ -6,7 +6,7 @@ on:
     #  types: published
   push:
     branches: [ master ]
-    paths: [ 'update', '.github/workflows/compile-riscv-gnu-toolchain.yml' ]
+    paths: [ 'README.md', '.github/workflows/compile-riscv-gnu-toolchain.yml' ]
 #  schedule:
 #    - cron: 0 8 * * 5
 #  watch:
