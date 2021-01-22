@@ -43,11 +43,10 @@ jobs:
         git clone --recursive https://git.busybox.net/busybox
         tar Jcf qemu-toolchain-linux-busybox/riscv64-linux-source.tar.xz qemu linux busybox
 
-    - name: Get riscv toolchin
+    - name: Get riscv toolchain
       run: |
         wget https://toolchains.bootlin.com/downloads/releases/toolchains/riscv64/tarballs/riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2
         sudo mkdir -p /opt && tar xf riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2 -C /opt
-        export PATH=$PATH:/opt/riscv64--glibc--bleeding-edge-2020.08-1/bin
         mv riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2 qemu-toolchain-linux-busybox
         riscv64-linux-gcc --version
 
@@ -61,6 +60,7 @@ jobs:
     - name: Compile riscv linux
       run: |
         cd linux && git checkout v5.10
+        export PATH=$PATH:/opt/riscv64--glibc--bleeding-edge-2020.08-1/bin
         make ARCH=riscv CROSS_COMPILE=riscv64-linux- defconfig
         make ARCH=riscv CROSS_COMPILE=riscv64-linux- -j $(nproc)
         cp -a arch/riscv/boot ../qemu-toolchain-linux-busybox/linux-boot
@@ -68,6 +68,7 @@ jobs:
     - name: Compile Busybox
       run: |
         cd busybox
+        export PATH=$PATH:/opt/riscv64--glibc--bleeding-edge-2020.08-1/bin
         CROSS_COMPILE=riscv64-linux- make defconfig
         CROSS_COMPILE=riscv64-linux- make -j $(nproc)
         cp busybox ../qemu-toolchain-linux-busybox
