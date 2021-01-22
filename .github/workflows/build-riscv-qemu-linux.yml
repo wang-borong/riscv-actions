@@ -12,6 +12,8 @@ on:
 env:
   TZ: Asia/Shanghai
 
+
+# Action will return to the startup working directory every run
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -35,46 +37,43 @@ jobs:
 
     - name: Clone sources
       run: |
-        mkdir riscv64-linux qemu-toolchain-linux-busybox && cd riscv64-linux
+        mkdir qemu-toolchain-linux-busybox
         git clone --recursive https://github.com/qemu/qemu
         git clone --recursive https://github.com/torvalds/linux
         git clone --recursive https://git.busybox.net/busybox
-        cd .. && tar Jcf qemu-toolchain-linux-busybox/riscv64-linux-source.tar.xz riscv64-linux
-        cd riscv64-linux
+        cd .. && tar Jcf qemu-toolchain-linux-busybox/riscv64-linux-source.tar.xz qemu linux busybox
 
     - name: Get riscv toolchin
       run: |
         wget https://toolchains.bootlin.com/downloads/releases/toolchains/riscv64/tarballs/riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2
         sudo mkdir -p /opt && tar xf riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2 -C /opt
         export PATH=$PATH:/opt/riscv64--glibc--bleeding-edge-2020.08-1/bin
-        mv riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2 ../qemu-toolchain-linux-busybox
+        mv riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2 qemu-toolchain-linux-busybox
+        riscv64-linux-gcc --version && [[ $? != 0 ]] && exit 255
 
     - name: Compile qemu
       run: |
         cd qemu && git checkout v5.2.0
-        ./configure --prefix=$PWD/../../qemu-toolchain-linux-busybox/qemu-5.2.0-install
+        ./configure --prefix=$PWD/../qemu-toolchain-linux-busybox/qemu-5.2.0-install
         make -j$(nproc) && make install
-        cd ../.. && tar Jcf qemu-5.2.0-install.tar.xz qemu-5.2.0-install
-        cd riscv64-linux
 
     - name: Compile riscv linux
       run: |
         cd linux && git checkout v5.10
         make ARCH=riscv CROSS_COMPILE=riscv64-linux- defconfig
         make ARCH=riscv CROSS_COMPILE=riscv64-linux- -j $(nproc)
-        cp arch/riscv/boot/Image ../../qemu-toolchain-linux-busybox
-        cd ..
+        cp arch/riscv/boot/Image ../qemu-toolchain-linux-busybox
 
     - name: Compile Busybox
       run: |
         cd busybox
         CROSS_COMPILE=riscv64-linux- make defconfig
         CROSS_COMPILE=riscv64-linux- make -j $(nproc)
-        cp busybox ../../qemu-toolchain-linux-busybox
+        cp busybox ../qemu-toolchain-linux-busybox
 
     - name: Pack
       run: |
-        cd ../.. && tar Jcf qemu-toolchain-linux-busybox.tar.xz qemu-toolchain-linux-busybox
+        tar Jcf qemu-toolchain-linux-busybox.tar.xz qemu-toolchain-linux-busybox
         echo "PACKAGE=$PWD/qemu-toolchain-linux-busybox.tar.xz" >> $GITHUB_ENV
 
     - name: Upload package
