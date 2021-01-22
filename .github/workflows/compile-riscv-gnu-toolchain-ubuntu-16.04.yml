@@ -1,4 +1,4 @@
-name: Build riscv gnu toolchain
+name: Build riscv gnu toolchain on ubuntu 16.04
 
 on:
     #repository_dispatch:
@@ -6,9 +6,9 @@ on:
     #  types: published
   push:
     branches: [ master ]
-    paths: [ 'README.md', '.github/workflows/compile-riscv-gnu-toolchain.yml' ]
+    paths: [ '.github/workflows/compile-riscv-gnu-toolchain-ubuntu-16.04.yml' ]
   schedule:
-    - cron: 0 21 * * *
+    - cron: 0 18 * * *
   watch:
     types: started
 
@@ -17,7 +17,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-16.04
     if: github.event.repository.owner.id == github.event.sender.id
 
     steps:
@@ -26,6 +26,7 @@ jobs:
 
     - name: Initialization environment
       run: |
+        [[ -f /swapfile ]] && sudo swapoff /swapfile && sudo rm -rf /swapfile
         sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
         sudo -E apt-get -qq update
         sudo -E apt-get install autoconf automake autotools-dev curl python3 libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev
@@ -40,12 +41,12 @@ jobs:
       id: compile
       run: |
         cd riscv-gnu-toolchain
-        ./configure --prefix=$PWD/riscv-gnu-toolchain-install --enable-multilib
-        # ./configure --prefix=$PWD/riscv-gnu-toolchain-install --with-arch=rv64g
+        ./configure --prefix=$PWD/rvgt-ubuntu-$(lsb_release -s -r) --enable-multilib
+        # ./configure --prefix=$PWD/rvgt-ubuntu-$(lsb_release -s -r) --with-arch=rv64g
         echo -e "$(nproc) thread compile"
         make -j$(nproc) && make linux -j$(nproc) &&
-            tar Jcf riscv-gnu-toolchain-install.tar.xz riscv-gnu-toolchain-install &&
-            echo "RVTCINS=$PWD/riscv-gnu-toolchain-install.tar.xz" >> $GITHUB_ENV
+            tar Jcf rvgt-ubuntu-$(lsb_release -s -r).tar.xz rvgt-ubuntu-$(lsb_release -s -r) &&
+            echo "RVTCINS=$PWD/rvgt-ubuntu-$(lsb_release -s -r).tar.xz" >> $GITHUB_ENV
         echo "::set-output name=status::success"
 
     - name: Upload compiled package
@@ -53,7 +54,7 @@ jobs:
       if: steps.compile.outputs.status == 'success' && !cancelled()
       with:
         name: riscv-gnu-toolchain-package
-        path: riscv-gnu-toolchain/riscv-gnu-toolchain-install.tar.xz
+        path: riscv-gnu-toolchain/rvgt-ubuntu-$(lsb_release -s -r).tar.xz
 
     - name: Upload package to cowtransfer
       id: cowtransfer
@@ -68,7 +69,7 @@ jobs:
       id: tag
       if: steps.compile.outputs.status == 'success' && !cancelled()
       run: |
-        echo "::set-output name=release_tag::$(date +"%Y.%m.%d-%H%M")"
+        echo "::set-output name=release_tag::$(date +"%Y.%m.%d-%H%M")-$(lsb_release -s -r)"
         touch release.txt
         echo "🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})" >> release.txt
         echo "::set-output name=status::success"
