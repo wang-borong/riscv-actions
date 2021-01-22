@@ -5,7 +5,7 @@ on:
     branches: [ master ]
     paths: [ '.github/workflows/build-riscv-qemu-linux.yml' ]
   schedule:
-    - cron: 0 24 * * *
+    - cron: 0 0 * * *
   watch:
     types: started
 
