@@ -49,7 +49,7 @@ jobs:
         sudo mkdir -p /opt && tar xf riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2 -C /opt
         export PATH=$PATH:/opt/riscv64--glibc--bleeding-edge-2020.08-1/bin
         mv riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2 qemu-toolchain-linux-busybox
-        riscv64-linux-gcc --version && [[ $? != 0 ]] && exit 255
+        riscv64-linux-gcc --version
 
     - name: Compile qemu
       run: |
