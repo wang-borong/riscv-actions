@@ -41,7 +41,7 @@ jobs:
         git clone --recursive https://github.com/qemu/qemu
         git clone --recursive https://github.com/torvalds/linux
         git clone --recursive https://git.busybox.net/busybox
-        cd .. && tar Jcf qemu-toolchain-linux-busybox/riscv64-linux-source.tar.xz qemu linux busybox
+        tar Jcf qemu-toolchain-linux-busybox/riscv64-linux-source.tar.xz qemu linux busybox
 
     - name: Get riscv toolchin
       run: |
@@ -53,16 +53,17 @@ jobs:
 
     - name: Compile qemu
       run: |
+        mkdir -p qemu-toolchain-linux-busybox/qemu-v5.2.0
         cd qemu && git checkout v5.2.0
-        ./configure --prefix=$PWD/../qemu-toolchain-linux-busybox/qemu-5.2.0-install
-        make -j$(nproc) && make install
+        ./configure --prefix=/opt/qemu
+        make -j$(nproc) && make install DESTDIR=$PWD/../qemu-toolchain-linux-busybox/qemu-v5.2.0
 
     - name: Compile riscv linux
       run: |
         cd linux && git checkout v5.10
         make ARCH=riscv CROSS_COMPILE=riscv64-linux- defconfig
         make ARCH=riscv CROSS_COMPILE=riscv64-linux- -j $(nproc)
-        cp arch/riscv/boot/Image ../qemu-toolchain-linux-busybox
+        cp -a arch/riscv/boot ../qemu-toolchain-linux-busybox/linux-boot
 
     - name: Compile Busybox
       run: |
