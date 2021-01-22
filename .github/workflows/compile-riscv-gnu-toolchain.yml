@@ -43,7 +43,9 @@ jobs:
         ./configure --prefix=$PWD/riscv-gnu-toolchain-install --enable-multilib
         # ./configure --prefix=$PWD/riscv-gnu-toolchain-install --with-arch=rv64g
         echo -e "$(nproc) thread compile"
-        make -j$(nproc) && make linux -j$(nproc) && echo "RVTCINS=$PWD/riscv-gnu-toolchain-install" >> $GITHUB_ENV
+        make -j$(nproc) && make linux -j$(nproc) &&
+            tar Jcf riscv-gnu-toolchain-install.tar.xz riscv-gnu-toolchain-install &&
+            echo "RVTCINS=$PWD/riscv-gnu-toolchain-install.tar.xz" >> $GITHUB_ENV
         echo "::set-output name=status::success"
 
     - name: Upload compiled package
@@ -51,7 +53,7 @@ jobs:
       if: steps.compile.outputs.status == 'success' && !cancelled()
       with:
         name: riscv-gnu-toolchain-package
-        path: riscv-gnu-toolchain/riscv-gnu-toolchain-install
+        path: riscv-gnu-toolchain/riscv-gnu-toolchain-install.tar.xz
 
     - name: Upload package to cowtransfer
       id: cowtransfer
@@ -61,3 +63,31 @@ jobs:
         ./transfer cow --block 2621440 -s -p 64 --no-progress ${RVTCINS} 2>&1 | tee cowtransfer.log
         echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
         echo "::set-output name=url::$(cat cowtransfer.log | grep https | cut -f3 -d" ")"
+
+    - name: Generate release tag
+      id: tag
+      if: steps.compile.outputs.status == 'success' && !cancelled()
+      run: |
+        echo "::set-output name=release_tag::$(date +"%Y.%m.%d-%H%M")"
+        touch release.txt
+        echo "🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})" >> release.txt
+        echo "::set-output name=status::success"
+
+    - name: Upload package to release
+      id: release
+      uses: softprops/action-gh-release@v1
+      if: steps.tag.outputs.status == 'success' && !cancelled()
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.tag.outputs.release_tag }}
+        body_path: release.txt
+        files: ${{ env.RVTCINS }}
+
+    - name: Remove old Releases
+      uses: dev-drprasad/delete-older-releases@v0.1.0
+      with:
+        keep_latest: 3
+        delete_tags: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
