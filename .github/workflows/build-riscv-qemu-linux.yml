@@ -67,6 +67,7 @@ jobs:
     - name: Compile Busybox
       run: |
         cd busybox
+        git checkout 1_33_0
         export PATH=$PATH:/opt/riscv64--glibc--bleeding-edge-2020.08-1/bin
         CROSS_COMPILE=riscv64-linux- make defconfig
         CROSS_COMPILE=riscv64-linux- make -j $(nproc)
