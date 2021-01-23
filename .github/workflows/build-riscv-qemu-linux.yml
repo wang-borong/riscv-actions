@@ -41,7 +41,7 @@ jobs:
         git clone --recursive https://github.com/qemu/qemu
         git clone --recursive https://github.com/torvalds/linux
         git clone --recursive https://git.busybox.net/busybox
-        tar Jcf qemu-toolchain-linux-busybox/riscv64-linux-source.tar.xz qemu linux busybox
+        #tar Jcf qemu-toolchain-linux-busybox/riscv64-linux-source.tar.xz qemu linux busybox
 
     - name: Get riscv toolchain
       run: |
