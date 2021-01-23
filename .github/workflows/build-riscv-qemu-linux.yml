@@ -48,7 +48,6 @@ jobs:
         wget https://toolchains.bootlin.com/downloads/releases/toolchains/riscv64/tarballs/riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2
         sudo mkdir -p /opt && tar xf riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2 -C /opt
         mv riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2 qemu-toolchain-linux-busybox
-        riscv64-linux-gcc --version
 
     - name: Compile qemu
       run: |
