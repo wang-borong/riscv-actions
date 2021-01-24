@@ -69,7 +69,7 @@ jobs:
       id: tag
       if: steps.compile.outputs.status == 'success' && !cancelled()
       run: |
-        echo "::set-output name=release_tag::$(date +"%Y.%m.%d-%H%M")-$(lsb_release -s -r)"
+        echo "::set-output name=release_tag::$(date +"%Y.%m.%d")-rvgt-$(lsb_release -s -r)"
         touch release.txt
         echo "🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})" >> release.txt
         echo "::set-output name=status::success"
