@@ -48,7 +48,8 @@ jobs:
     - name: Pack
       run: |
         cd buildroot-2020.11.1/output
-        tar Jcf buildroot-2020.11-output-images.tar.xz images
+        mv images buildroot-2020.11-output-images
+        tar Jcf buildroot-2020.11-output-images.tar.xz buildroot-2020.11-output-images
         echo "PACKAGE=$PWD/buildroot-2020.11-output-images.tar.xz" >> $GITHUB_ENV
 
     - name: Upload package

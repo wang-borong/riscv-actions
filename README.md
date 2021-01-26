@@ -1,4 +1,4 @@
-# Build actions for RISC-V
+# Build actions for RISC-V stuff
 
 
 ## Build [riscv-gnu-toolchain](https://github.com/riscv/riscv-gnu-toolchain)
@@ -21,3 +21,13 @@ It will fetch and build [qemu](https://www.qemu.org), [linux](https://www.kernel
 * [bootlin riscv toolchain(2020.08-1)](https://toolchains.bootlin.com/downloads/releases/toolchains/riscv64/tarballs/riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2)
 
 Check other toolchain of bootlin [here](https://toolchains.bootlin.com).
+
+
+## Build [buildroot](https://buildroot.org)
+
+This task is building `qemu_riscv64_virt_defconfig` and get all components for booting riscv linux on qemu.
+
+* `fw_jump.elf`
+* Linux image
+* rootfs.ext2
+* SDK (build with `make sdk`)
