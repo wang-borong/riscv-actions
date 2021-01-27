@@ -43,3 +43,17 @@ linux::https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.10.10.tar.xz
 busybox::https://busybox.net/downloads/busybox-1.32.1.tar.bz2
 bootlin-toolchain::https://toolchains.bootlin.com/downloads/releases/toolchains/riscv64/tarballs/riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2
 ```
+
+## Installation stuff
+
+### qemu-linux-busybox
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wbrn/riscv-actions/master/install-gt.sh | sh
+```
+
+### riscv-gnu-toolchain
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wbrn/riscv-actions/master/install-qlb.sh | sh
+```
