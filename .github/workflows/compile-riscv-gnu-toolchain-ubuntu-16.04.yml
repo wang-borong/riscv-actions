@@ -70,8 +70,7 @@ jobs:
         run: |
           echo "::set-output name=release_tag::$(date +"%Y.%m.%d")"
           touch release.txt
-          echo "Build riscv gnu toolchain for Ubuntu$(lsb_release -s -r)" >> release.txt
-          echo "🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})" >> release.txt
+          echo "* riscv gnu toolchain for Ubuntu$(lsb_release -s -r) 🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})" >> release.txt
           echo "::set-output name=status::success"
 
       - name: Upload package to release

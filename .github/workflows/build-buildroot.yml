@@ -3,9 +3,9 @@ name: Build buildroot
 on:
   push:
     branches: [ master ]
-    paths: [ '.github/workflows/build-buildroot.yml' ]
+    paths: [ '.github/workflows/build-buildroot.yml', 'packages' ]
   schedule:
-    - cron: 0 22 * * 5
+    - cron: 0 22 * * *
   watch:
     types: started
 
@@ -34,28 +34,33 @@ jobs:
 
       - name: Download buildroot stable source
         run: |
-          wget https://buildroot.org/downloads/buildroot-2020.11.1.tar.gz
-          tar xf buildroot-2020.11.1.tar.gz
+          wget https://raw.githubusercontent.com/wbrn/riscv-actions/master/packages
+
+          br_link="$(grep buildroot packages | awk -F '::' '{print $2}')"
+          wget $br_link
+          br_file="$(basename $br_link)"
+          echo "BR_DIR=$(echo $br_file | sed 's/.tar.*//')" >> $GITHUB_ENV
+          tar xf $br_file
 
       - name: Building
         run: |
-          cd buildroot-2020.11.1
+          cd ${BR_DIR}
           make qemu_riscv64_virt_defconfig
           make -j$(nproc)
           make -j$(nproc) sdk 
 
       - name: Pack
         run: |
-          cd buildroot-2020.11.1/output
-          mv images buildroot-2020.11-output-images
-          tar Jcf buildroot-2020.11-output-images.tar.xz buildroot-2020.11-output-images
-          echo "PACKAGE=$PWD/buildroot-2020.11-output-images.tar.xz" >> $GITHUB_ENV
+          cd ${BR_DIR}/output
+          mv images ${BR_DIR}-output-images
+          tar Jcf ${BR_DIR}-output-images.tar.xz ${BR_DIR}-output-images
+          echo "PACKAGE=$PWD/${BR_DIR}-output-images.tar.xz" >> $GITHUB_ENV
 
       - name: Upload package
         uses: actions/upload-artifact@master
         with:
-          name: buildroot-output-images
-          path: buildroot-2020.11.1/output/buildroot-2020.11-output-images.tar.xz
+          name: ${BR_DIR}-output-images
+          path: ${BR_DIR}/output/${BR_DIR}-output-images.tar.xz
 
       - name: Upload package to cowtransfer
         id: cowtransfer
@@ -70,8 +75,7 @@ jobs:
         run: |
           echo "::set-output name=release_tag::$(date +"%Y.%m.%d")"
           touch release.txt
-          echo "Build buildroot for Ubuntu$(lsb_release -s -r)" >> release.txt
-          echo "🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})"  >> release.txt
+          echo "* ${BR_DIR} for Ubuntu$(lsb_release -s -r) 🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})" >> release.txt
           echo "::set-output name=status::success"
 
       - name: Upload package to release

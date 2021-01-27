@@ -13,7 +13,7 @@ The multilib compiler will have the prefix riscv64-unknown-elf- or riscv64-unkno
 
 ## Build QEMU, Linux and Busybox
 
-It will fetch and build [qemu](https://www.qemu.org), [linux](https://www.kernel.org) and [busybox](https://www.busybox.net) to risc-v arch.
+It will fetch and build [qemu](https://www.qemu.org), [linux](https://www.kernel.org) and [busybox](https://www.busybox.net) for RISC-V.
 
 
 ## Other toolchains
@@ -31,3 +31,15 @@ This task is building `qemu_riscv64_virt_defconfig` and get all components for b
 * Linux image
 * rootfs.ext2
 * SDK (build with `make sdk`)
+
+## Specify package download link in `packages`
+
+Example:
+
+```
+buildroot::https://buildroot.org/downloads/buildroot-2020.11.1.tar.gz
+qemu::https://download.qemu.org/qemu-5.2.0.tar.xz
+linux::https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.10.10.tar.xz
+busybox::https://busybox.net/downloads/busybox-1.32.1.tar.bz2
+bootlin-toolchain::https://toolchains.bootlin.com/downloads/releases/toolchains/riscv64/tarballs/riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2
+```

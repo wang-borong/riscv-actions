@@ -3,9 +3,9 @@ name: Build riscv QEMU and Linux
 on:
   push:
     branches: [ master ]
-    paths: [ '.github/workflows/build-riscv-qemu-linux.yml' ]
+    paths: [ '.github/workflows/build-riscv-qemu-linux.yml', 'packages' ]
   schedule:
-    - cron: 0 0 * * *
+    - cron: 0 23 * * *
   watch:
     types: started
 
@@ -37,40 +37,62 @@ jobs:
       - name: Clone sources
         run: |
           mkdir qemu-linux-busybox
-          git clone --recursive https://github.com/qemu/qemu
-          git clone --recursive https://github.com/torvalds/linux
-          git clone --recursive https://git.busybox.net/busybox
-          #tar Jcf qemu-linux-busybox/riscv64-linux-source.tar.xz qemu linux busybox
 
-      - name: Get riscv toolchain
+          wget https://raw.githubusercontent.com/wbrn/riscv-actions/master/packages
+          # download qemu
+          qemu_link="$(grep qemu packages | awk -F '::' '{print $2}')"
+          wget $qemu_link
+          qemu_file="$(basename $qemu_link)"
+          echo "QEMU_DIR=$(echo $qemu_file | sed 's/.tar.*//')" >> $GITHUB_ENV
+          tar xf $qemu_file
+          # download linux
+          linux_link="$(grep linux packages | awk -F '::' '{print $2}')"
+          wget $linux_link
+          linux_file="$(basename $linux_link)"
+          echo "LINUX_DIR=$(echo $linux_file | sed 's/.tar.*//')" >> $GITHUB_ENV
+          tar xf $linux_file
+          # download busybox
+          busybox_link="$(grep busybox packages | awk -F '::' '{print $2}')"
+          wget $busybox_link
+          busybox_file="$(basename $busybox_link)"
+          echo "BUSYBOX_DIR=$(echo $busybox_file | sed 's/.tar.*//')" >> $GITHUB_ENV
+          tar xf $busybox_file
+          # download bootlin toolchain
+          tc_link="$(grep bootlin-toolchain packages | awk -F '::' '{print $2}')"
+          wget $tc_link
+          tc_file="$(basename $tc_link)"
+          echo "TC_DIR=$(echo $tc_file | sed 's/.tar.*//')" >> $GITHUB_ENV
+          sudo mkdir -p /opt && tar xf $tc_file -C /opt
+
+          mv $tc_file qemu-linux-busybox
+
+      - name: Get bootlin toolchain rootfs skeleton
         run: |
-          wget https://toolchains.bootlin.com/downloads/releases/toolchains/riscv64/tarballs/riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2
-          sudo mkdir -p /opt && tar xf riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2 -C /opt
-          mv riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2 qemu-linux-busybox
+          cp -a /opt/${TC_DIR}/riscv64-buildroot-linux-gnu/sysroot qemu-linux-busybox/rootfs-skeleton
 
       - name: Compile qemu
         run: |
-          mkdir -p qemu-linux-busybox/qemu-v5.2.0
-          cd qemu && git checkout v5.2.0
+          mkdir -p qemu-linux-busybox/${QEMU_DIR}
+          cd ${QEMU_DIR}
           ./configure --prefix=/opt/qemu
-          make -j$(nproc) && make install DESTDIR=$PWD/../qemu-linux-busybox/qemu-v5.2.0
+          make -j$(nproc) && make install DESTDIR=$PWD/../qemu-linux-busybox/${QEMU_DIR}
 
       - name: Compile riscv linux
         run: |
-          cd linux && git checkout v5.10
-          export PATH=$PATH:/opt/riscv64--glibc--bleeding-edge-2020.08-1/bin
+          cd ${LINUX_DIR}
+          export PATH=$PATH:/opt/${TC_DIR}/bin
           make ARCH=riscv CROSS_COMPILE=riscv64-linux- defconfig
           make ARCH=riscv CROSS_COMPILE=riscv64-linux- -j $(nproc)
           cp -a arch/riscv/boot ../qemu-linux-busybox/linux-boot
 
       - name: Compile Busybox
         run: |
-          cd busybox
-          git checkout 1_33_0
-          export PATH=$PATH:/opt/riscv64--glibc--bleeding-edge-2020.08-1/bin
+          cd ${BUSYBOX_DIR}
+          export PATH=$PATH:/opt/${TC_DIR}/bin
           CROSS_COMPILE=riscv64-linux- make defconfig
           CROSS_COMPILE=riscv64-linux- make -j $(nproc)
-          cp busybox ../qemu-linux-busybox
+          CROSS_COMPILE=riscv64-linux- make install
+          cp -a _install/* ../qemu-linux-busybox/rootfs-skeleton
 
       - name: Pack
         run: |
@@ -85,7 +107,6 @@ jobs:
 
       - name: Upload package to cowtransfer
         id: cowtransfer
-        #if: steps.compile.outputs.status == 'success' && !cancelled()
         run: |
           curl -fsSL git.io/file-transfer | sh
           ./transfer cow --block 2621440 -s -p 64 --no-progress ${PACKAGE} 2>&1 | tee cowtransfer.log
@@ -94,18 +115,15 @@ jobs:
 
       - name: Generate release tag
         id: tag
-        #if: steps.compile.outputs.status == 'success' && !cancelled()
         run: |
           echo "::set-output name=release_tag::$(date +"%Y.%m.%d")"
           touch release.txt
-          echo "Build qemu for Ubuntu$(lsb_release -s -r) and linux and busybox of riscv64" >> release.txt
-          echo "🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})" >> release.txt
+          echo "* ${QEMU_DIR} for Ubuntu$(lsb_release -s -r); ${LINUX_DIR} and ${BUSYBOX_DIR} rootfs of riscv64 🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})" >> release.txt
           echo "::set-output name=status::success"
 
       - name: Upload package to release
         id: release
         uses: softprops/action-gh-release@v1
-        #if: steps.tag.outputs.status == 'success' && !cancelled()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
