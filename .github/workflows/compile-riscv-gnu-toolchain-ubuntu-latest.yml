@@ -49,11 +49,11 @@ jobs:
           echo "::set-output name=status::success"
 
       - name: Upload compiled package
-        uses: actions/upload-artifact@master
+        uses: actions/upload-artifact@v2
         if: steps.compile.outputs.status == 'success' && !cancelled()
         with:
-          name: riscv-gnu-toolchain-package
-          path: riscv-gnu-toolchain/rvgt-ubuntu-$(lsb_release -s -r).tar.xz
+          name: riscv gnu toolchain package
+          path: ${{env.PACKAGE}}
 
       - name: Upload package to cowtransfer
         id: cowtransfer
@@ -70,7 +70,7 @@ jobs:
         run: |
           echo "::set-output name=release_tag::$(date +"%Y.%m.%d")"
           touch release.txt
-          echo "* riscv gnu toolchain for Ubuntu$(lsb_release -s -r) 🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})" >> release.txt
+          echo "* riscv gnu toolchain for Ubuntu$(lsb_release -s -r) 🔗 [Cowtransfer](${{steps.cowtransfer.outputs.url}})" >> release.txt
           echo "::set-output name=status::success"
 
       - name: Upload package to release
@@ -78,11 +78,11 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: steps.tag.outputs.status == 'success' && !cancelled()
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:
-          tag_name: ${{ steps.tag.outputs.release_tag }}
+          tag_name: ${{steps.tag.outputs.release_tag}}
           body_path: release.txt
-          files: ${{ env.PACKAGE }}
+          files: ${{env.PACKAGE}}
 
       - name: Remove old Releases
         uses: dev-drprasad/delete-older-releases@v0.1.0
@@ -90,4 +90,4 @@ jobs:
           keep_latest: 3
           delete_tags: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

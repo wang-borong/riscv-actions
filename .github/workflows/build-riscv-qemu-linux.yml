@@ -102,8 +102,8 @@ jobs:
       - name: Upload package
         uses: actions/upload-artifact@master
         with:
-          name: qemu-linux-busybox
-          path: qemu-linux-busybox.tar.xz
+          name: ${{env.QEMU_DIR}} ${{env.LINUX_DIR}} ${{env.BUSYBOX_DIR}}
+          path: ${{env.PACKAGE}}
 
       - name: Upload package to cowtransfer
         id: cowtransfer
@@ -118,15 +118,15 @@ jobs:
         run: |
           echo "::set-output name=release_tag::$(date +"%Y.%m.%d")"
           touch release.txt
-          echo "* ${QEMU_DIR} for Ubuntu$(lsb_release -s -r); ${LINUX_DIR} and ${BUSYBOX_DIR} rootfs of riscv64 🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})" >> release.txt
+          echo "* ${QEMU_DIR} for Ubuntu$(lsb_release -s -r); ${LINUX_DIR} and ${BUSYBOX_DIR} rootfs of riscv64 🔗 [Cowtransfer](${{steps.cowtransfer.outputs.url}})" >> release.txt
           echo "::set-output name=status::success"
 
       - name: Upload package to release
         id: release
         uses: softprops/action-gh-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:
-          tag_name: ${{ steps.tag.outputs.release_tag }}
+          tag_name: ${{steps.tag.outputs.release_tag}}
           body_path: release.txt
-          files: ${{ env.PACKAGE }}
+          files: ${{env.PACKAGE}}

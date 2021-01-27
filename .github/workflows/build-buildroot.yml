@@ -59,8 +59,8 @@ jobs:
       - name: Upload package
         uses: actions/upload-artifact@master
         with:
-          name: ${BR_DIR}-output-images
-          path: ${BR_DIR}/output/${BR_DIR}-output-images.tar.xz
+          name: ${{env.BR_DIR}} output images
+          path: ${{env.PACKAGE}}
 
       - name: Upload package to cowtransfer
         id: cowtransfer
@@ -75,7 +75,7 @@ jobs:
         run: |
           echo "::set-output name=release_tag::$(date +"%Y.%m.%d")"
           touch release.txt
-          echo "* ${BR_DIR} for Ubuntu$(lsb_release -s -r) 🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})" >> release.txt
+          echo "* ${BR_DIR} for Ubuntu$(lsb_release -s -r) 🔗 [Cowtransfer](${{steps.cowtransfer.outputs.url}})" >> release.txt
           echo "::set-output name=status::success"
 
       - name: Upload package to release
@@ -83,8 +83,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: steps.tag.outputs.status == 'success' && !cancelled()
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:
-          tag_name: ${{ steps.tag.outputs.release_tag }}
+          tag_name: ${{steps.tag.outputs.release_tag}}
           body_path: release.txt
-          files: ${{ env.PACKAGE }}
+          files: ${{env.PACKAGE}}
