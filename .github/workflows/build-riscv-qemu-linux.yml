@@ -63,6 +63,7 @@ jobs:
           sudo mkdir -p /opt && tar xf $tc_file -C /opt
 
           echo "PKG_DIR=${QEMU_DIR}-${LINUX_DIR}-${BUSYBOX_DIR}" >> $GITHUB_ENV
+          echo ${PKG_DIR}
           mkdir ${PKG_DIR}
           mv $tc_file ${PKG_DIR}
 
