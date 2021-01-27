@@ -63,11 +63,11 @@ jobs:
           sudo mkdir -p /opt && tar xf $tc_file -C /opt
 
           echo "PKG_DIR=$QEMU_DIR-$LINUX_DIR-$BUSYBOX_DIR" >> $GITHUB_ENV
-          mkdir $QEMU_DIR-$LINUX_DIR-$BUSYBOX_DIR
-          mv $tc_file $QEMU_DIR-$LINUX_DIR-$BUSYBOX_DIR
 
       - name: Get bootlin toolchain rootfs skeleton
         run: |
+          mkdir ${PKG_DIR}
+          mv ${TC_DIR}.tar.* ${PKG_DIR}
           cp -a /opt/${TC_DIR}/riscv64-buildroot-linux-gnu/sysroot ${PKG_DIR}/rootfs-skeleton
 
       - name: Compile qemu
