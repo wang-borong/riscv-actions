@@ -36,8 +36,6 @@ jobs:
 
       - name: Clone sources
         run: |
-          mkdir qemu-linux-busybox
-
           wget https://raw.githubusercontent.com/wbrn/riscv-actions/master/packages
           # download qemu
           qemu_link="$(grep qemu packages | awk -F '::' '{print $2}')"
@@ -64,18 +62,20 @@ jobs:
           echo "TC_DIR=$(echo $tc_file | sed 's/.tar.*//')" >> $GITHUB_ENV
           sudo mkdir -p /opt && tar xf $tc_file -C /opt
 
-          mv $tc_file qemu-linux-busybox
+          echo "PKG_DIR=$QEMU_DIR-$LINUX_DIR-$BUSYBOX_DIR" >> $GITHUB_ENV
+          mkdir ${PKG_DIR}
+          mv $tc_file ${PKG_DIR}
 
       - name: Get bootlin toolchain rootfs skeleton
         run: |
-          cp -a /opt/${TC_DIR}/riscv64-buildroot-linux-gnu/sysroot qemu-linux-busybox/rootfs-skeleton
+          cp -a /opt/${TC_DIR}/riscv64-buildroot-linux-gnu/sysroot ${PKG_DIR}/rootfs-skeleton
 
       - name: Compile qemu
         run: |
-          mkdir -p qemu-linux-busybox/${QEMU_DIR}
+          mkdir -p ${PKG_DIR}/${QEMU_DIR}
           cd ${QEMU_DIR}
           ./configure --prefix=/opt/qemu
-          make -j$(nproc) && make install DESTDIR=$PWD/../qemu-linux-busybox/${QEMU_DIR}
+          make -j$(nproc) && make install DESTDIR=$PWD/../${PKG_DIR}/${QEMU_DIR}
 
       - name: Compile riscv linux
         run: |
@@ -83,7 +83,7 @@ jobs:
           export PATH=$PATH:/opt/${TC_DIR}/bin
           make ARCH=riscv CROSS_COMPILE=riscv64-linux- defconfig
           make ARCH=riscv CROSS_COMPILE=riscv64-linux- -j $(nproc)
-          cp -a arch/riscv/boot ../qemu-linux-busybox/linux-boot
+          cp -a arch/riscv/boot ../${PKG_DIR}/${LINUX_DIR}-boot
 
       - name: Compile Busybox
         run: |
@@ -92,12 +92,12 @@ jobs:
           CROSS_COMPILE=riscv64-linux- make defconfig
           CROSS_COMPILE=riscv64-linux- make -j $(nproc)
           CROSS_COMPILE=riscv64-linux- make install
-          cp -a _install/* ../qemu-linux-busybox/rootfs-skeleton
+          cp -a _install/* ../${PKG_DIR}/rootfs-skeleton
 
       - name: Pack
         run: |
-          tar Jcf qemu-linux-busybox.tar.xz qemu-linux-busybox
-          echo "PACKAGE=$PWD/qemu-linux-busybox.tar.xz" >> $GITHUB_ENV
+          tar Jcf ${PKG_DIR}.tar.xz ${PKG_DIR}
+          echo "PACKAGE=$PWD/${PKG_DIR}.tar.xz" >> $GITHUB_ENV
 
       - name: Upload package
         uses: actions/upload-artifact@master
