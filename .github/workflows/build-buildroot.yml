@@ -20,67 +20,67 @@ jobs:
     if: github.event.repository.owner.id == github.event.sender.id
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@master
+      - uses: actions/checkout@v2
 
-    - name: Initialization environment
-      run: |
-        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
-        sudo -E apt-get -qq update
-        sudo -E apt-get install sed make binutils build-essential gcc g++ patch gzip \
-                                bzip2 perl cpio unzip rsync file bc wget -y
-        sudo -E apt-get -qq autoremove --purge
-        sudo -E apt-get -qq clean
-        sudo timedatectl set-timezone "$TZ"
+      - name: Initialization environment
+        run: |
+          sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo -E apt-get -qq update
+          sudo -E apt-get install sed make binutils build-essential gcc g++ patch gzip \
+                                  bzip2 perl cpio unzip rsync file bc wget -y
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo timedatectl set-timezone "$TZ"
 
-    - name: Download buildroot stable source
-      run: |
-        wget https://buildroot.org/downloads/buildroot-2020.11.1.tar.gz
-        tar xf buildroot-2020.11.1.tar.gz
+      - name: Download buildroot stable source
+        run: |
+          wget https://buildroot.org/downloads/buildroot-2020.11.1.tar.gz
+          tar xf buildroot-2020.11.1.tar.gz
 
-    - name: Building
-      run: |
-        cd buildroot-2020.11.1
-        make qemu_riscv64_virt_defconfig
-        make -j$(nproc)
-        make -j$(nproc) sdk 
+      - name: Building
+        run: |
+          cd buildroot-2020.11.1
+          make qemu_riscv64_virt_defconfig
+          make -j$(nproc)
+          make -j$(nproc) sdk 
 
-    - name: Pack
-      run: |
-        cd buildroot-2020.11.1/output
-        mv images buildroot-2020.11-output-images
-        tar Jcf buildroot-2020.11-output-images.tar.xz buildroot-2020.11-output-images
-        echo "PACKAGE=$PWD/buildroot-2020.11-output-images.tar.xz" >> $GITHUB_ENV
+      - name: Pack
+        run: |
+          cd buildroot-2020.11.1/output
+          mv images buildroot-2020.11-output-images
+          tar Jcf buildroot-2020.11-output-images.tar.xz buildroot-2020.11-output-images
+          echo "PACKAGE=$PWD/buildroot-2020.11-output-images.tar.xz" >> $GITHUB_ENV
 
-    - name: Upload package
-      uses: actions/upload-artifact@master
-      with:
-        name: buildroot-output-images
-        path: buildroot-2020.11.1/output/buildroot-2020.11-output-images.tar.xz
+      - name: Upload package
+        uses: actions/upload-artifact@master
+        with:
+          name: buildroot-output-images
+          path: buildroot-2020.11.1/output/buildroot-2020.11-output-images.tar.xz
 
-    - name: Upload package to cowtransfer
-      id: cowtransfer
-      run: |
-        curl -fsSL git.io/file-transfer | sh
-        ./transfer cow --block 2621440 -s -p 64 --no-progress ${PACKAGE} 2>&1 | tee cowtransfer.log
-        echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
-        echo "::set-output name=url::$(cat cowtransfer.log | grep https | cut -f3 -d" ")"
+      - name: Upload package to cowtransfer
+        id: cowtransfer
+        run: |
+          curl -fsSL git.io/file-transfer | sh
+          ./transfer cow --block 2621440 -s -p 64 --no-progress ${PACKAGE} 2>&1 | tee cowtransfer.log
+          echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
+          echo "::set-output name=url::$(cat cowtransfer.log | grep https | cut -f3 -d" ")"
 
-    - name: Generate release tag
-      id: tag
-      run: |
-        echo "::set-output name=release_tag::$(date +"%Y.%m.%d")-buildroot-$(lsb_release -s -r)"
-        touch release.txt
-        echo "🔗 [Cowtransfer buildroot](${{ steps.cowtransfer.outputs.url }})" >> release.txt
-        echo "::set-output name=status::success"
+      - name: Generate release tag
+        id: tag
+        run: |
+          echo "::set-output name=release_tag::$(date +"%Y.%m.%d")"
+          touch release.txt
+          echo "Build buildroot for Ubuntu$(lsb_release -s -r)" >> release.txt
+          echo "🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})"  >> release.txt
+          echo "::set-output name=status::success"
 
-    - name: Upload package to release
-      id: release
-      uses: softprops/action-gh-release@v1
-      if: steps.tag.outputs.status == 'success' && !cancelled()
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.tag.outputs.release_tag }}
-        body_path: release.txt
-        files: ${{ env.PACKAGE }}
+      - name: Upload package to release
+        id: release
+        uses: softprops/action-gh-release@v1
+        if: steps.tag.outputs.status == 'success' && !cancelled()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag.outputs.release_tag }}
+          body_path: release.txt
+          files: ${{ env.PACKAGE }}

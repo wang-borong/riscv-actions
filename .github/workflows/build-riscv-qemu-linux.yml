@@ -20,103 +20,95 @@ jobs:
     if: github.event.repository.owner.id == github.event.sender.id
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@master
+      - uses: actions/checkout@v2
 
-    - name: Initialization environment
-      run: |
-        [[ -f /swapfile ]] && sudo swapoff /swapfile && sudo rm -rf /swapfile
-        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
-        sudo -E apt-get -qq update
-        sudo -E apt install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev \
-                 gawk build-essential bison flex texinfo gperf libtool patchutils bc \
-                 zlib1g-dev libexpat-dev git wget ninja-build
-        sudo -E apt-get -qq autoremove --purge
-        sudo -E apt-get -qq clean
-        sudo timedatectl set-timezone "$TZ"
+      - name: Initialization environment
+        run: |
+          [[ -f /swapfile ]] && sudo swapoff /swapfile && sudo rm -rf /swapfile
+          sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo -E apt-get -qq update
+          sudo -E apt install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev \
+                   gawk build-essential bison flex texinfo gperf libtool patchutils bc \
+                   zlib1g-dev libexpat-dev git wget ninja-build
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo timedatectl set-timezone "$TZ"
 
-    - name: Clone sources
-      run: |
-        mkdir qemu-toolchain-linux-busybox
-        git clone --recursive https://github.com/qemu/qemu
-        git clone --recursive https://github.com/torvalds/linux
-        git clone --recursive https://git.busybox.net/busybox
-        #tar Jcf qemu-toolchain-linux-busybox/riscv64-linux-source.tar.xz qemu linux busybox
+      - name: Clone sources
+        run: |
+          mkdir qemu-linux-busybox
+          git clone --recursive https://github.com/qemu/qemu
+          git clone --recursive https://github.com/torvalds/linux
+          git clone --recursive https://git.busybox.net/busybox
+          #tar Jcf qemu-linux-busybox/riscv64-linux-source.tar.xz qemu linux busybox
 
-    - name: Get riscv toolchain
-      run: |
-        wget https://toolchains.bootlin.com/downloads/releases/toolchains/riscv64/tarballs/riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2
-        sudo mkdir -p /opt && tar xf riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2 -C /opt
-        mv riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2 qemu-toolchain-linux-busybox
+      - name: Get riscv toolchain
+        run: |
+          wget https://toolchains.bootlin.com/downloads/releases/toolchains/riscv64/tarballs/riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2
+          sudo mkdir -p /opt && tar xf riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2 -C /opt
+          mv riscv64--glibc--bleeding-edge-2020.08-1.tar.bz2 qemu-linux-busybox
 
-    - name: Compile qemu
-      run: |
-        mkdir -p qemu-toolchain-linux-busybox/qemu-v5.2.0
-        cd qemu && git checkout v5.2.0
-        ./configure --prefix=/opt/qemu
-        make -j$(nproc) && make install DESTDIR=$PWD/../qemu-toolchain-linux-busybox/qemu-v5.2.0
+      - name: Compile qemu
+        run: |
+          mkdir -p qemu-linux-busybox/qemu-v5.2.0
+          cd qemu && git checkout v5.2.0
+          ./configure --prefix=/opt/qemu
+          make -j$(nproc) && make install DESTDIR=$PWD/../qemu-linux-busybox/qemu-v5.2.0
 
-    - name: Compile riscv linux
-      run: |
-        cd linux && git checkout v5.10
-        export PATH=$PATH:/opt/riscv64--glibc--bleeding-edge-2020.08-1/bin
-        make ARCH=riscv CROSS_COMPILE=riscv64-linux- defconfig
-        make ARCH=riscv CROSS_COMPILE=riscv64-linux- -j $(nproc)
-        cp -a arch/riscv/boot ../qemu-toolchain-linux-busybox/linux-boot
+      - name: Compile riscv linux
+        run: |
+          cd linux && git checkout v5.10
+          export PATH=$PATH:/opt/riscv64--glibc--bleeding-edge-2020.08-1/bin
+          make ARCH=riscv CROSS_COMPILE=riscv64-linux- defconfig
+          make ARCH=riscv CROSS_COMPILE=riscv64-linux- -j $(nproc)
+          cp -a arch/riscv/boot ../qemu-linux-busybox/linux-boot
 
-    - name: Compile Busybox
-      run: |
-        cd busybox
-        git checkout 1_33_0
-        export PATH=$PATH:/opt/riscv64--glibc--bleeding-edge-2020.08-1/bin
-        CROSS_COMPILE=riscv64-linux- make defconfig
-        CROSS_COMPILE=riscv64-linux- make -j $(nproc)
-        cp busybox ../qemu-toolchain-linux-busybox
+      - name: Compile Busybox
+        run: |
+          cd busybox
+          git checkout 1_33_0
+          export PATH=$PATH:/opt/riscv64--glibc--bleeding-edge-2020.08-1/bin
+          CROSS_COMPILE=riscv64-linux- make defconfig
+          CROSS_COMPILE=riscv64-linux- make -j $(nproc)
+          cp busybox ../qemu-linux-busybox
 
-    - name: Pack
-      run: |
-        tar Jcf qemu-toolchain-linux-busybox.tar.xz qemu-toolchain-linux-busybox
-        echo "PACKAGE=$PWD/qemu-toolchain-linux-busybox.tar.xz" >> $GITHUB_ENV
+      - name: Pack
+        run: |
+          tar Jcf qemu-linux-busybox.tar.xz qemu-linux-busybox
+          echo "PACKAGE=$PWD/qemu-linux-busybox.tar.xz" >> $GITHUB_ENV
 
-    - name: Upload package
-      uses: actions/upload-artifact@master
-      with:
-        name: qemu-toolchain-linux-busybox
-        path: qemu-toolchain-linux-busybox.tar.xz
+      - name: Upload package
+        uses: actions/upload-artifact@master
+        with:
+          name: qemu-linux-busybox
+          path: qemu-linux-busybox.tar.xz
 
-    - name: Upload package to cowtransfer
-      id: cowtransfer
-      #if: steps.compile.outputs.status == 'success' && !cancelled()
-      run: |
-        curl -fsSL git.io/file-transfer | sh
-        ./transfer cow --block 2621440 -s -p 64 --no-progress ${PACKAGE} 2>&1 | tee cowtransfer.log
-        echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
-        echo "::set-output name=url::$(cat cowtransfer.log | grep https | cut -f3 -d" ")"
+      - name: Upload package to cowtransfer
+        id: cowtransfer
+        #if: steps.compile.outputs.status == 'success' && !cancelled()
+        run: |
+          curl -fsSL git.io/file-transfer | sh
+          ./transfer cow --block 2621440 -s -p 64 --no-progress ${PACKAGE} 2>&1 | tee cowtransfer.log
+          echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
+          echo "::set-output name=url::$(cat cowtransfer.log | grep https | cut -f3 -d" ")"
 
-    - name: Generate release tag
-      id: tag
-      #if: steps.compile.outputs.status == 'success' && !cancelled()
-      run: |
-        echo "::set-output name=release_tag::$(date +"%Y.%m.%d")-qlb-$(lsb_release -s -r)"
-        touch release.txt
-        echo "🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})" >> release.txt
-        echo "::set-output name=status::success"
+      - name: Generate release tag
+        id: tag
+        #if: steps.compile.outputs.status == 'success' && !cancelled()
+        run: |
+          echo "::set-output name=release_tag::$(date +"%Y.%m.%d")"
+          touch release.txt
+          echo "Build qemu for Ubuntu$(lsb_release -s -r) and linux and busybox of riscv64" >> release.txt
+          echo "🔗 [Cowtransfer](${{ steps.cowtransfer.outputs.url }})" >> release.txt
+          echo "::set-output name=status::success"
 
-    - name: Upload package to release
-      id: release
-      uses: softprops/action-gh-release@v1
-      #if: steps.tag.outputs.status == 'success' && !cancelled()
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.tag.outputs.release_tag }}
-        body_path: release.txt
-        files: ${{ env.PACKAGE }}
-
-    #- name: Remove old Releases
-    #  uses: dev-drprasad/delete-older-releases@v0.1.0
-    #  with:
-    #    keep_latest: 3
-    #    delete_tags: true
-    #  env:
-    #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload package to release
+        id: release
+        uses: softprops/action-gh-release@v1
+        #if: steps.tag.outputs.status == 'success' && !cancelled()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag.outputs.release_tag }}
+          body_path: release.txt
+          files: ${{ env.PACKAGE }}
