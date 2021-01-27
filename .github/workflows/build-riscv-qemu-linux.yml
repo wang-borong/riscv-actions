@@ -105,20 +105,20 @@ jobs:
           name: ${{env.QEMU_DIR}} ${{env.LINUX_DIR}} ${{env.BUSYBOX_DIR}}
           path: ${{env.PACKAGE}}
 
-      - name: Upload package to cowtransfer
-        id: cowtransfer
-        run: |
-          curl -fsSL git.io/file-transfer | sh
-          ./transfer cow --block 2621440 -s -p 64 --no-progress ${PACKAGE} 2>&1 | tee cowtransfer.log
-          echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
-          echo "::set-output name=url::$(cat cowtransfer.log | grep https | cut -f3 -d" ")"
+      #- name: Upload package to cowtransfer
+      #  id: cowtransfer
+      #  run: |
+      #    curl -fsSL git.io/file-transfer | sh
+      #    ./transfer cow --block 2621440 -s -p 64 --no-progress ${PACKAGE} 2>&1 | tee cowtransfer.log
+      #    echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
+      #    echo "::set-output name=url::$(cat cowtransfer.log | grep https | cut -f3 -d" ")"
 
       - name: Generate release tag
         id: tag
         run: |
           echo "::set-output name=release_tag::$(date +"%Y.%m.%d")"
           touch release.txt
-          echo "* ${QEMU_DIR} for Ubuntu$(lsb_release -s -r); ${LINUX_DIR} and ${BUSYBOX_DIR} rootfs of riscv64 🔗 [Cowtransfer](${{steps.cowtransfer.outputs.url}})" >> release.txt
+          echo "* ${QEMU_DIR} for Ubuntu$(lsb_release -s -r); ${LINUX_DIR} and ${BUSYBOX_DIR} rootfs of riscv64" >> release.txt
           echo "::set-output name=status::success"
 
       - name: Upload package to release
