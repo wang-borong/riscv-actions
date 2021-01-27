@@ -62,7 +62,7 @@ jobs:
           echo "TC_DIR=$(echo $tc_file | sed 's/.tar.*//')" >> $GITHUB_ENV
           sudo mkdir -p /opt && tar xf $tc_file -C /opt
 
-          echo "PKG_DIR=$(echo $QEMU_DIR-$LINUX_DIR-$BUSYBOX_DIR)" >> $GITHUB_ENV
+          echo "PKG_DIR=${QEMU_DIR}-${LINUX_DIR}-${BUSYBOX_DIR}" >> $GITHUB_ENV
           mkdir ${PKG_DIR}
           mv $tc_file ${PKG_DIR}
 
