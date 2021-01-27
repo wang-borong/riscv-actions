@@ -59,17 +59,19 @@ jobs:
           tc_link="$(grep bootlin-toolchain packages | awk -F '::' '{print $2}')"
           wget $tc_link
           tc_file="$(basename $tc_link)"
+          echo "TC_FILE=$tc_file" >> $GITHUB_ENV
           echo "TC_DIR=$(echo $tc_file | sed 's/.tar.*//')" >> $GITHUB_ENV
           sudo mkdir -p /opt && tar xf $tc_file -C /opt
 
-      - name: Get bootlin toolchain rootfs skeleton
+      # github env can only be used in following running task
+      - name: Set other env
         run: |
           echo "PKG_DIR=${QEMU_DIR}-${LINUX_DIR}-${BUSYBOX_DIR}" >> $GITHUB_ENV
-          echo ${QEMU_DIR}-${LINUX_DIR}-${BUSYBOX_DIR}
-          echo ${PKG_DIR}
+          
+      - name: Get bootlin toolchain rootfs skeleton
+        run: |
           mkdir ${PKG_DIR}
-
-          qiut 1
+          mv ${TC_FILE} ${PKG_DIR}
           cp -a /opt/${TC_DIR}/riscv64-buildroot-linux-gnu/sysroot ${PKG_DIR}/rootfs-skeleton
 
       - name: Compile qemu
