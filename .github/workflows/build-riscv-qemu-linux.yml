@@ -63,8 +63,8 @@ jobs:
           sudo mkdir -p /opt && tar xf $tc_file -C /opt
 
           echo "PKG_DIR=$QEMU_DIR-$LINUX_DIR-$BUSYBOX_DIR" >> $GITHUB_ENV
-          mkdir ${PKG_DIR}
-          mv $tc_file ${PKG_DIR}
+          mkdir $QEMU_DIR-$LINUX_DIR-$BUSYBOX_DIR
+          mv $tc_file $QEMU_DIR-$LINUX_DIR-$BUSYBOX_DIR
 
       - name: Get bootlin toolchain rootfs skeleton
         run: |
