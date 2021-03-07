@@ -34,12 +34,16 @@ jobs:
           sudo timedatectl set-timezone "$TZ"
 
       - name: Clone toolchain source code
-        run: git clone --recursive https://github.com/riscv/riscv-gnu-toolchain
+        run: |
+          sudo mkdir -p /work && sudo chmod 777 /work
+          cd /work
+          git clone --recursive https://github.com/riscv/riscv-gnu-toolchain
+          echo "RGT=/work/riscv-gnu-toolchain" >> $GITHUB_ENV
 
       - name: Compile the riscv toolchain
         id: compile
         run: |
-          cd riscv-gnu-toolchain
+          cd ${RGT}
           ./configure --prefix=/opt/riscv32_64-multilib-gnu --enable-multilib
           # ./configure --prefix=/opt/riscv32_64-multilib-gnu --with-arch=rv64g
           echo -e "$(nproc) thread compile"

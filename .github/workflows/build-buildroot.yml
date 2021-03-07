@@ -32,15 +32,22 @@ jobs:
           sudo -E apt-get -qq clean
           sudo timedatectl set-timezone "$TZ"
 
+      - name: Setup build env
+        run: |
+          sudo mkdir -p /Buildroot-riscv && sudo chmod 777 /Buildroot-riscv
+          echo "BD=/Buildroot-riscv" >> $GITHUB_ENV
+
       - name: Download buildroot stable source
         run: |
-          wget https://raw.githubusercontent.com/wbrn/riscv-actions/master/packages
+          cd ${BD}
 
+          wget https://raw.githubusercontent.com/wbrn/riscv-actions/master/packages
           br_link="$(grep buildroot packages | awk -F '::' '{print $2}')"
           wget $br_link
           br_file="$(basename $br_link)"
-          echo "BR_DIR=$(echo $br_file | sed 's/.tar.*//')" >> $GITHUB_ENV
           tar xf $br_file
+
+          echo "BR_DIR=${BD}/$(echo $br_file | sed 's/.tar.*//')" >> $GITHUB_ENV
 
       - name: Building
         run: |
@@ -52,9 +59,9 @@ jobs:
       - name: Pack
         run: |
           cd ${BR_DIR}/output
-          mv images ${BR_DIR}-output-images
-          tar Jcf ${BR_DIR}-output-images.tar.xz ${BR_DIR}-output-images
-          echo "PACKAGE=$PWD/${BR_DIR}-output-images.tar.xz" >> $GITHUB_ENV
+          mv images $(basename ${BR_DIR})-output-images
+          tar Jcf $(basename ${BR_DIR})-output-images.tar.xz $(basename ${BR_DIR})-output-images
+          echo "PACKAGE=$PWD/$(basename ${BR_DIR})-output-images.tar.xz" >> $GITHUB_ENV
 
       - name: Upload package
         uses: actions/upload-artifact@master
