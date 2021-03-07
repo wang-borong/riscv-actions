@@ -62,11 +62,12 @@ jobs:
           mv images $(basename ${BR_DIR})-output-images
           tar Jcf $(basename ${BR_DIR})-output-images.tar.xz $(basename ${BR_DIR})-output-images
           echo "PACKAGE=$PWD/$(basename ${BR_DIR})-output-images.tar.xz" >> $GITHUB_ENV
+          echo "BR_NAME=$(basename ${BR_DIR})" >> $GITHUB_ENV
 
       - name: Upload package
         uses: actions/upload-artifact@master
         with:
-          name: buildroot output images
+          name: ${{env.BR_NAME}} output images
           path: ${{env.PACKAGE}}
 
       #- name: Upload package to cowtransfer
