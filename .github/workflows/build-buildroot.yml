@@ -83,7 +83,7 @@ jobs:
         run: |
           echo "::set-output name=release_tag::$(date +"%Y.%m.%d")"
           touch release.txt
-          echo "* ${BR_DIR} for Ubuntu$(lsb_release -s -r)" >> release.txt
+          echo "* ${BR_NAME} for Ubuntu$(lsb_release -s -r)" >> release.txt
           echo "::set-output name=status::success"
 
       - name: Upload package to release
