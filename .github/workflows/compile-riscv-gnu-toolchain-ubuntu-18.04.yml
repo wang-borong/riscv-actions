@@ -1,4 +1,4 @@
-name: Build riscv gnu toolchain on ubuntu 16.04
+name: Build riscv gnu toolchain on ubuntu 18.04
 
 on:
     #repository_dispatch:
@@ -6,7 +6,7 @@ on:
     #  types: published
   push:
     branches: [ master ]
-    paths: [ '.github/workflows/compile-riscv-gnu-toolchain-ubuntu-16.04.yml' ]
+    paths: [ '.github/workflows/compile-riscv-gnu-toolchain-ubuntu-18.04.yml' ]
   schedule:
     - cron: 0 18 * * *
   watch:
@@ -17,7 +17,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
     if: github.event.repository.owner.id == github.event.sender.id
 
     steps:
